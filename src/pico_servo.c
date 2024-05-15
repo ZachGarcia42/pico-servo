@@ -20,8 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma GCC visibility push(default)
 
-#include "pico_servo.h"
+#include "../include/pico_servo.h"
 #include "pico/time.h"
 #include "hardware/irq.h"
 #include "hardware/pwm.h"
@@ -40,8 +41,8 @@
 #define PWM_FREQ 50 // PWM frequency in hertz
 
 static float clkdiv;
-static uint min;
-static uint max;
+static uint min_val;
+static uint max_val;
 
 static int slice_map[30];
 static uint slice_active[8];
@@ -74,12 +75,12 @@ static void wrap_cb(void)
 }
 
 /**
- * @brief Set min and max microseconds.
+ * @brief Set min_val and max_val microseconds.
  * 
- * Set min and max microseconds.
+ * Set min_val and max_val microseconds.
  * 
- * @param a the min time in microseconds
- * @param b the max time in microseconds
+ * @param a the min_val time in microseconds
+ * @param b the max_val time in microseconds
  */
 void servo_set_bounds(uint a, uint b)
 {
@@ -87,8 +88,8 @@ void servo_set_bounds(uint a, uint b)
     max_us = b;
     if (fix16_to_float(us_per_unit) > 0.0f)
     {
-        min = min_us / us_per_unit;
-	    max = max_us / us_per_unit;
+        min_val = min_us / us_per_unit;
+	    max_val = max_us / us_per_unit;
     }
 }
 
@@ -139,8 +140,8 @@ int servo_clock_source(uint src)
     }
     us_per_unit = 1.f / (PWM_FREQ * WRAP) / MICRO;
 
-    min = min_us / us_per_unit;
-    max = max_us / us_per_unit;
+    min_val = min_us / us_per_unit;
+    max_val = max_us / us_per_unit;
 
     return 0;
 }
@@ -158,8 +159,8 @@ int servo_clock_manual(uint freq)
     {
         return 1;
     }
-    min = 0.025f * (float)WRAP;
-    max = 0.125f * (float)WRAP;
+    min_val = 0.025f * (float)WRAP;
+    max_val = 0.125f * (float)WRAP;
 
     return 0;
 }
@@ -218,9 +219,9 @@ int servo_move_to(uint pin, uint angle)
     uint val = (uint)fix16_to_int(
         fix16_mul(
             fix16_div(fix16_from_int(angle), fix16_from_int(180)),
-            fix16_from_int(max - min)
+            fix16_from_int(max_val - min_val)
         )
-    ) + min;
+    ) + min_val;
 
     uint pos = slice_map[pin] + (pin % 2);
     servo_pos[16 * servo_pos_buf[pos] + pos] = val;
@@ -249,4 +250,6 @@ int servo_microseconds(uint pin, uint us)
     servo_pos_buf[pos] = (servo_pos_buf[pos] + 1) % 2;
     return 0;
 }
+
+#pragma GCC visibility pop
 

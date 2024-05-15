@@ -8,6 +8,7 @@ docs
 *.md5
 
 build/*
+examples/build/*
 !build/upload.sh
 *.uf2
 
